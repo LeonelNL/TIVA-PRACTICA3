@@ -15,12 +15,14 @@ unsigned char dat[6];
 char dato[13];
 volatile uint32_t ui32TempValueC;
 uint32_t ui32Status;
-uint32_t CentenasNumero1;
-uint32_t DecenasNumero1;
-uint32_t UnidadesNumero1;
-uint32_t DecimasNumero1;
-uint32_t CentecimasNumero1;
+uint32_t CentenasNumero1, CentenasNumero2;
+uint32_t DecenasNumero1, DecenasNumero2;
+uint32_t UnidadesNumero1, UnidadesNumero2;
+uint32_t DecimasNumero1, DecimasNumero2;
+uint32_t CentecimasNumero1, CentecimasNumero2;
 uint32_t i = 0;
+uint32_t Numero1, Numero2;
+uint32_t Resultado;
 
 void UARTIntHandler(void)
 {
@@ -35,17 +37,32 @@ void UARTIntHandler(void)
             dato[i] = UARTCharGetNonBlocking(UART0_BASE);
             SysCtlDelay(SysCtlClockGet() / (1000 * 3));
         }
-        CentenasNumero1 = (dato[1] - '0') * 100;
-        DecenasNumero1 = (dato[2] - '0') * 10;
-        UnidadesNumero1 = dato[3] - '0';
-        DecimasNumero1 = (dato[5] - '0');
+        CentenasNumero1 = (dato[1] - '0') * 10000;
+        DecenasNumero1 = (dato[2] - '0') * 1000;
+        UnidadesNumero1 = (dato[3] - '0') * 100;
+        DecimasNumero1 = (dato[5] - '0') * 10;
         CentecimasNumero1 = (dato[6] - '0');
+        Numero1 = CentenasNumero1 + DecenasNumero1 + UnidadesNumero1 + DecimasNumero1 + CentecimasNumero1;
+        CentenasNumero2 = (dato[7] - '0') * 10000;
+        DecenasNumero2 = (dato[8] - '0') * 1000;
+        UnidadesNumero2 = (dato[9] - '0') * 100;
+        DecimasNumero2 = (dato[11] - '0') * 10;
+        CentecimasNumero2 = (dato[12] - '0');
+        Numero2 = CentenasNumero2 + DecenasNumero2 + UnidadesNumero2 + DecimasNumero2 + CentecimasNumero2;
+
+        if(dato[0] == 'x')
+        {
+            Resultado = Numero1 * Numero2;
+        }
+        else
+        {
+            Resultado = Numero1 / Numero2;
+        }
     }
 }
 
 int main(void)
 {
-
     SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
     ConfigUART();
 
@@ -54,10 +71,10 @@ int main(void)
 
        ui32TempValueC = (1475 - ((2475 * 10)) / 4096)/10;
        dat[0] = '#';
-       dat[1]= (unsigned char)  ((ui32TempValueC/1000));
-       dat[2]= (unsigned char)   ((ui32TempValueC/100)-(dat[1]*10));
-       dat[3]= (unsigned char)   ((ui32TempValueC/10)-(dat[1]*100)-(dat[2]*10));
-       dat[4]= (unsigned char)   ((ui32TempValueC/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[1]= (unsigned char)  ((Numero1/1000));
+       dat[2]= (unsigned char)   ((Numero1/100)-(dat[1]*10));
+       dat[3]= (unsigned char)   ((Numero1/10)-(dat[1]*100)-(dat[2]*10));
+       dat[4]= (unsigned char)   ((Numero1/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
        dat[5] = '&';
 
        dat[1]= dat[1]+48;
