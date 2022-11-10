@@ -47,6 +47,7 @@ void UARTIntHandler(void)
         dato[i] = UARTCharGetNonBlocking(UART0_BASE);
         SysCtlDelay(SysCtlClockGet() / (1000 * 3));
         }
+        
         Centenas = (dato[0] - '0') * 100;
         Decenas = (dato[1] - '0') * 10;
         Unidades = dato[2] - '0';

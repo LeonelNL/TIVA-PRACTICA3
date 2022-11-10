@@ -4,59 +4,55 @@
 #include "inc/hw_memmap.h"
 #include "inc/hw_types.h"
 #include "driverlib/gpio.h"
-#include "driverlib/adc.h"
 #include "driverlib/interrupt.h"
 #include "driverlib/pin_map.h"
 #include "driverlib/sysctl.h"
 #include "driverlib/uart.h"
 #include "driverlib/debug.h"
-
+#include "uartconfig.h"
 
 unsigned char dat[6];
-uint32_t ui32ADC0Value[4];
-volatile uint32_t ui32TempAvg;
+char dato[13];
 volatile uint32_t ui32TempValueC;
-volatile uint32_t ui32TempValueF;
+uint32_t ui32Status;
+uint32_t CentenasNumero1;
+uint32_t DecenasNumero1;
+uint32_t UnidadesNumero1;
+uint32_t DecimasNumero1;
+uint32_t CentecimasNumero1;
+uint32_t i = 0;
+
+void UARTIntHandler(void)
+{
+
+    ui32Status = UARTIntStatus(UART0_BASE, true); //get interrupt status
+    UARTIntClear(UART0_BASE, ui32Status); //clear the asserted interrupts
+
+    while(UARTCharsAvail(UART0_BASE)) //loop while there are chars
+    {
+        for(i = 0; i < 13; i++)
+        {
+            dato[i] = UARTCharGetNonBlocking(UART0_BASE);
+            SysCtlDelay(SysCtlClockGet() / (1000 * 3));
+        }
+        CentenasNumero1 = (dato[1] - '0') * 100;
+        DecenasNumero1 = (dato[2] - '0') * 10;
+        UnidadesNumero1 = dato[3] - '0';
+        DecimasNumero1 = (dato[5] - '0');
+        CentecimasNumero1 = (dato[6] - '0');
+    }
+}
 
 int main(void)
 {
 
     SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
-
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_ADC0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_UART0);
-    SysCtlPeripheralEnable(SYSCTL_PERIPH_GPIOA);
-    GPIOPinConfigure(GPIO_PA0_U0RX);
-    GPIOPinConfigure(GPIO_PA1_U0TX);
-    GPIOPinTypeUART(GPIO_PORTA_BASE, GPIO_PIN_0 | GPIO_PIN_1);
-    UARTConfigSetExpClk(UART0_BASE, SysCtlClockGet(), 115200,
-            (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE | UART_CONFIG_PAR_NONE));
-
-    IntMasterEnable(); //enable processor interrupts
-    IntEnable(INT_UART0); //enable the UART interrupt
-    UARTIntEnable(UART0_BASE, UART_INT_RX | UART_INT_RT); //only enable RX and TX interrupts
-
-    ADCSequenceConfigure(ADC0_BASE, 1, ADC_TRIGGER_PROCESSOR, 0);
-    ADCSequenceStepConfigure(ADC0_BASE, 1, 0, ADC_CTL_TS);
-    ADCSequenceStepConfigure(ADC0_BASE, 1, 1, ADC_CTL_TS);
-    ADCSequenceStepConfigure(ADC0_BASE, 1, 2, ADC_CTL_TS);
-    ADCSequenceStepConfigure(ADC0_BASE,1,3,ADC_CTL_TS|ADC_CTL_IE|ADC_CTL_END);
-    ADCSequenceEnable(ADC0_BASE, 1);
+    ConfigUART();
 
     while(1)
     {
-       ADCIntClear(ADC0_BASE, 1);
-       ADCProcessorTrigger(ADC0_BASE, 1);
 
-       while(!ADCIntStatus(ADC0_BASE, 1, false))
-       {
-       }
-
-       ADCSequenceDataGet(ADC0_BASE, 1, ui32ADC0Value);
-       ui32TempAvg = (ui32ADC0Value[0] + ui32ADC0Value[1] + ui32ADC0Value[2] + ui32ADC0Value[3] + 2)/4;
-       ui32TempValueC = (1475 - ((2475 * ui32TempAvg)) / 4096)/10;
-       ui32TempValueF = ((ui32TempValueC * 9) + 160) / 5;
-
+       ui32TempValueC = (1475 - ((2475 * 10)) / 4096)/10;
        dat[0] = '#';
        dat[1]= (unsigned char)  ((ui32TempValueC/1000));
        dat[2]= (unsigned char)   ((ui32TempValueC/100)-(dat[1]*10));
@@ -75,9 +71,7 @@ int main(void)
        UARTCharPut(UART0_BASE, dat[3]);
        UARTCharPut(UART0_BASE, dat[4]);
        UARTCharPut(UART0_BASE, dat[5]);
-
-
-       SysCtlDelay(1333333); //10 ms
+       SysCtlDelay(133333); //10 ms
 
     }
 }
