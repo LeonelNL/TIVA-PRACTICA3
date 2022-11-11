@@ -10,10 +10,12 @@
 #include "driverlib/uart.h"
 #include "driverlib/debug.h"
 #include "uartconfig.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "string.h"
 
 unsigned char dat[6];
 char dato[13];
-volatile uint32_t ui32TempValueC;
 uint32_t ui32Status;
 uint32_t CentenasNumero1, CentenasNumero2;
 uint32_t DecenasNumero1, DecenasNumero2;
@@ -23,6 +25,7 @@ uint32_t CentecimasNumero1, CentecimasNumero2;
 uint32_t i = 0;
 uint32_t Numero1, Numero2;
 uint32_t Resultado;
+
 
 void UARTIntHandler(void)
 {
@@ -37,6 +40,7 @@ void UARTIntHandler(void)
             dato[i] = UARTCharGetNonBlocking(UART0_BASE);
             SysCtlDelay(SysCtlClockGet() / (1000 * 3));
         }
+
         CentenasNumero1 = (dato[1] - '0') * 10000;
         DecenasNumero1 = (dato[2] - '0') * 1000;
         UnidadesNumero1 = (dato[3] - '0') * 100;
@@ -64,18 +68,23 @@ void UARTIntHandler(void)
 int main(void)
 {
     SysCtlClockSet(SYSCTL_SYSDIV_5|SYSCTL_USE_PLL|SYSCTL_OSC_MAIN|SYSCTL_XTAL_16MHZ);
+
     ConfigUART();
 
     while(1)
     {
 
-       ui32TempValueC = (1475 - ((2475 * 10)) / 4096)/10;
        dat[0] = '#';
-       dat[1]= (unsigned char)  ((Numero1/1000));
-       dat[2]= (unsigned char)   ((Numero1/100)-(dat[1]*10));
-       dat[3]= (unsigned char)   ((Numero1/10)-(dat[1]*100)-(dat[2]*10));
-       dat[4]= (unsigned char)   ((Numero1/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
-       dat[5] = '&';
+       dat[1]= (unsigned char)  ((Resultado/1000));
+       dat[2]= (unsigned char)   ((Resultado/100)-(dat[1]*10));
+       dat[3]= (unsigned char)   ((Resultado/10)-(dat[1]*100)-(dat[2]*10));
+       dat[4]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[5]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[6]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[7]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[8]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[9]= (unsigned char)   ((Resultado/1)-(dat[1]*1000)-(dat[2]*100)-(dat[3]*10));
+       dat[10] = '&';
 
        dat[1]= dat[1]+48;
        dat[2]= dat[2]+48;
@@ -88,6 +97,7 @@ int main(void)
        UARTCharPut(UART0_BASE, dat[3]);
        UARTCharPut(UART0_BASE, dat[4]);
        UARTCharPut(UART0_BASE, dat[5]);
+
        SysCtlDelay(133333); //10 ms
 
     }
